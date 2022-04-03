@@ -1,31 +1,12 @@
-from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime
-app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///hello.db'
-db = SQLAlchemy(app) # DB선언
+from model.model import db
+from sqlalchemy import create_engine
+from sqlalchemy_utils import database_exists, create_database
+from config import SQLALCHEMY_DATABASE_URI
 
-# User라는 오브젝트
-class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(20), unique=True, nullable=False)
-    email = db.Column(db.String(20), unique=True, nullable=False)
-    image_file = db.Column(db.String(20), nullable=False, default='default.jpg')
-    password = db.Column(db.String(60), nullable=False, default='default.jpg')
-    posts = db.relationship('Post', backref='author', lazy=True)
+engine = create_engine(SQLALCHEMY_DATABASE_URI)
+if not database_exists(engine.url):
+    create_database(engine.url)
 
-    def __repr__(self):
-        return f"User('{self.username}', '{self.email}', '{self.image_file}')"
-
-# Post라는 오브젝트
-class Post(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(100), nullable=False)
-    date_posted = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    content = db.Column(db.Text, nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-
-    def __repr__(self):
-        return f"Post('{self.id}', '{self.title}', '{self.date_posted}')"
+print(database_exists(engine.url))
 
 db.create_all()
