@@ -124,9 +124,12 @@ class data_insert():
 
         # # date칼럼 생성
         result['date'] = nowToday
+        # num_recept_all' 생성
+        result['num_recept_all']  =
         result['sido'] = df['시도']
         result['region'] = df['지역구분']
         result['note'] = df['비고']
+
 
         # 순서변경
         result = result[
@@ -136,7 +139,7 @@ class data_insert():
 
         # 이름변경
         result.columns = ['date', 'sido', 'region', 'num_notice_all', 'num_notice_priority', 'num_notice_corp',
-                          'num_notice_taxi', 'num_notice_normal', 'num_recept_priority', 'num_recept_corp',
+                          'num_notice_taxi', 'num_notice_normal', 'num_recept_all', 'num_recept_priority', 'num_recept_corp',
                           'num_recept_taxi', 'num_recept_normal', 'num_release_all', 'num_release_priority',
                           'num_release_corp', 'num_release_taxi', 'num_release_normal', 'num_remains_all',
                           'num_remains_priority', 'num_remains_corp', 'num_remains_taxi', 'num_remains_normal']
