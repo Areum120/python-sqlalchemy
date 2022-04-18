@@ -1,7 +1,7 @@
 from datetime import datetime
 from db import db
 
-'''
+
 # create table
 
 # User라는 오브젝트
@@ -150,4 +150,3 @@ class check_subsidy_car(db.Model):
         return f"Polestar_info('{self.id}', '{self.category}', '{self.importer}', '{self.model}', '{self.subsidy}', '{self.created_at}', '{self.updated_at}')"
         print('table 생성 완료')
     
-'''
