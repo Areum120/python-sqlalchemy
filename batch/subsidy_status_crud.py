@@ -124,6 +124,7 @@ class data_insert():
         result = pd.concat([split_1, split_2, split_3, split_4], axis=1)
         # print(result)
 
+        # id칼럼 생성
         # date칼럼 생성
         result['date'] = nowToday
         result['sido'] = df['시도']
@@ -154,13 +155,35 @@ class data_insert():
                           'num_remains_priority', 'num_remains_corp', 'num_remains_taxi', 'num_remains_normal', 'note', 'created_at', 'updated_at']
         # print(result)
 
+        # type변경
+        result = result.astype({'num_notice_all':'int', 'num_notice_priority':'int', 'num_notice_corp':'int',
+                          'num_notice_taxi':'int', 'num_notice_normal':'int', 'num_recept_all':'int', 'num_recept_priority':'int', 'num_recept_corp':'int',
+                          'num_recept_taxi':'int', 'num_recept_normal':'int', 'num_release_all':'int', 'num_release_priority':'int',
+                          'num_release_corp':'int', 'num_release_taxi':'int', 'num_release_normal':'int', 'num_remains_all':'int',
+                          'num_remains_priority':'int', 'num_remains_corp':'int', 'num_remains_taxi':'int', 'num_remains_normal':'int'})
+
         self.result = result
 
     # subsidy_info insert 보조금 기본 정보
     def subsidy_info_insert(self):
+        # subsidy_info table insert
+
+        # id값 생성
+        # db에 있는 전날 subsidy_info data 불러오기
+        pre_df = pd.read_sql('select*from subsidy_info', db.connect)
+        print(len(pre_df['id']))
+
+        pre_num = len(pre_df['id'])
+        id = list(range(pre_num, pre_num+161, 1))
+        print(id)
+        print(len(id))
+
+        # 0번재 칼럼에 id 리스트 추가
+        self.result.insert(0, 'id', id, True)
+        print(self.result)
+
         try:
-            # subsidy_info table insert
-            self.result.to_sql(name='subsidy_info',con=db.engine,if_exists='append',index=True)#table이 있는 경우 if_exists='append' 사용, 값을 변경하려면 replace
+            self.result.to_sql(name='subsidy_info',con=db.engine,if_exists='append',index=False)#table이 있는 경우 if_exists='append' 사용, 값을 변경하려면 replace
             print('subsidy_info insert 완료')
         except Exception as e:
             print(e)
@@ -168,14 +191,7 @@ class data_insert():
     # subsidy_accepted insert 보조금 접수 가능
     def subsidy_accepted(self):
         # 잔여대수 전체, 잔여대수 우선순위, 잔여대수 법인, 잔여대수 택시, 잔여대수 일반
-        subsidy_accepted_df = self.result[['date', 'num_remains_all','num_remains_priority','num_remains_corp', 'num_remains_taxi', 'num_remains_normal']]
-
-        # data type 변경
-        type_change_df = self.result.astype({'num_recept_all':'int', 'num_notice_all':'int', 'num_notice_priority':'int','num_recept_priority':'int', 'num_notice_corp':'int','num_recept_corp':'int', 'num_notice_taxi':'int','num_recept_taxi':'int', 'num_notice_normal':'int','num_recept_normal':'int'})
-
-        # type 확인
-        # print(type_change_df.dtypes)
-        # print(type_change_df['num_recept_all'])
+        subsidy_accepted_df = self.result[['date', 'num_notice_all', 'num_notice_priority',  'num_notice_corp',  'num_recept_all', 'num_notice_taxi', 'num_notice_normal', 'num_recept_all', 'num_recept_priority', 'num_recept_corp', 'num_recept_taxi', 'num_recept_normal', 'num_remains_all','num_remains_priority','num_remains_corp', 'num_remains_taxi', 'num_remains_normal']]
 
         # 접수율 = 전체 접수대수 / 전체 공고대수
         # 접수율 전체, 접수율 우선순위, 접수율 법인, 접수율 택시, 접수율 일반, 접수 가능여부
@@ -194,11 +210,11 @@ class data_insert():
             except ZeroDivisionError:
                 print('0으로 나눌 수 없음')
 
-        subsidy_accepted_df['acceptance_rate_all'] = type_change_df.apply(lambda x: get_acceptance_rate(x['num_recept_all'], x['num_notice_all']), axis=1)
-        subsidy_accepted_df['acceptance_rate_priority'] = type_change_df.apply(lambda x: get_acceptance_rate(x['num_recept_priority'], x['num_notice_priority']), axis=1)
-        subsidy_accepted_df['acceptance_rate_corp'] = type_change_df.apply(lambda x: get_acceptance_rate(x['num_recept_corp'], x['num_notice_corp']), axis=1)
-        subsidy_accepted_df['acceptance_rate_taxi'] = type_change_df.apply(lambda x: get_acceptance_rate(x['num_recept_taxi'], x['num_notice_taxi']), axis=1)
-        subsidy_accepted_df['acceptance_rate_normal'] = type_change_df.apply(lambda x: get_acceptance_rate(x['num_recept_normal'], x['num_notice_normal']), axis=1)
+        subsidy_accepted_df['acceptance_rate_all'] = subsidy_accepted_df.apply(lambda x: get_acceptance_rate(x['num_recept_all'], x['num_notice_all']), axis=1)
+        subsidy_accepted_df['acceptance_rate_priority'] = subsidy_accepted_df.apply(lambda x: get_acceptance_rate(x['num_recept_priority'], x['num_notice_priority']), axis=1)
+        subsidy_accepted_df['acceptance_rate_corp'] = subsidy_accepted_df.apply(lambda x: get_acceptance_rate(x['num_recept_corp'], x['num_notice_corp']), axis=1)
+        subsidy_accepted_df['acceptance_rate_taxi'] = subsidy_accepted_df.apply(lambda x: get_acceptance_rate(x['num_recept_taxi'], x['num_notice_taxi']), axis=1)
+        subsidy_accepted_df['acceptance_rate_normal'] = subsidy_accepted_df.apply(lambda x: get_acceptance_rate(x['num_recept_normal'], x['num_notice_normal']), axis=1)
 
         # apply lambda if문 다중조건, inline 절로 표현 2
         # type_change_df['acceptance_rate_all'] = type_change_df.apply(lambda x: '100' if (x['num_notice_all'] == 0 and x['num_recept_all'] ==0) else (x['num_recept_all'] / x['num_notice_all'])('100' if (x['num_notice_all'] == 0 and x['num_recept_all'] > 0) else (x['num_recept_all'] / x['num_notice_all'])), axis=1)
@@ -238,15 +254,57 @@ class data_insert():
 
         # subsidy_accepted table insert
         try:
-            subsidy_accepted_df.to_sql(name='subsidy_accepted',con=db.engine,if_exists='append',index=True)#table이 있는 경우 if_exists='append' 사용, 값을 변경하려면 replace
-            print('subsidy_info insert 완료')
+            subsidy_accepted_df.to_sql(name='subsidy_accepted',con=db.engine,if_exists='append',index=False)#table이 있는 경우 if_exists='append' 사용, 값을 변경하려면 replace
+            print('subsidy_accepted insert 완료')
         except Exception as e:
             print(e)
 
-
     # subsidy_trend insert 보조금 트렌드
+    def subsidy_trend(self):
+        subsidy_trend_df =  self.result[['date','num_notice_all', 'num_notice_priority', 'num_notice_corp',
+                          'num_notice_taxi', 'num_notice_normal', 'num_recept_all', 'num_recept_priority', 'num_recept_corp',
+                          'num_recept_taxi', 'num_recept_normal', 'num_release_all', 'num_release_priority',
+                          'num_release_corp', 'num_release_taxi', 'num_release_normal']]
+
+        # 일별 접수 대수 칼럼 생성
+        # 어제 날짜 구하기
+        today = datetime.date.today()
+        yesterday = today - datetime.timedelta(1)
+        yesterday = str(yesterday)
+
+        # db에 있는 전날 subsidy_info data 불러오기
+        yesterday_df = pd.read_sql('select*from subsidy_info', db.connect)
+
+        # yesterday data type 변환
+        yesterday_df = yesterday_df.astype({'date':'str','num_recept_all':'int','num_recept_priority':'int','num_recept_corp':'int','num_recept_taxi':'int','num_recept_normal':'int'})
+
+        # 전일 df 추리기
+        yesterday_df = yesterday_df[yesterday_df['date'] == yesterday]
+
+        # 일별 접수 대수 = 전일 접수대수 - 오늘 접수대수
+        subsidy_trend_df['num_daily_recept_all'] = subsidy_trend_df['num_recept_all'] - yesterday_df['num_recept_all']
+        subsidy_trend_df['num_daily_recept_priority'] = subsidy_trend_df['num_recept_priority'] - yesterday_df['num_recept_priority']
+        subsidy_trend_df['num_daily_recept_corp'] =  subsidy_trend_df['num_recept_corp'] - yesterday_df['num_recept_corp']
+        subsidy_trend_df['num_daily_recept_taxi'] = subsidy_trend_df['num_recept_taxi'] - yesterday_df['num_recept_taxi']
+        subsidy_trend_df['num_daily_recept_normal'] = subsidy_trend_df['num_recept_normal'] - yesterday_df['num_recept_normal']
+
+        # row 생성 일자
+        subsidy_trend_df['created_at'] = datetime.datetime.now()
+        subsidy_trend_df['updated_at'] = datetime.datetime.now()
+
+        print(subsidy_trend_df)
+
+        # subsidy_accepted table insert
+        try:
+            subsidy_trend_df.to_sql(name='subsidy_trend', con=db.engine, if_exists='append',
+                                       index=False)  # table이 있는 경우 if_exists='append' 사용, 값을 변경하려면 replace
+            print('subsidy_trend insert 완료')
+        except Exception as e:
+            print(e)
+
     # subsidy_closing _area 보조금 마감지역
-    # check_subsidy_area 지역 보조금 확인
+
+
 
     # update
     def update_table_multiply(self):
@@ -275,8 +333,7 @@ class data_insert():
     #     op.add_column('opportunity', sa.Column('opportunity_type_id', sa.Integer(), nullable=True))
     #     op.create_foreign_key(
     #         'opportunity_type_id_contract_type_id_fkey', 'opportunity', 'contract_type',
-    #         ['opportunity_type_id'], ['id']
-    #     )
+    #         ['opportunity_type_id'], ['id'])
 
 
 # crawler 실행
@@ -286,8 +343,8 @@ DI.crawler_parsing()
 
 # insert
 # DI.subsidy_info_insert()
-# DI.subsidy_accepted()
-
+DI.subsidy_accepted()
+# DI.subsidy_trend()
 
 # update
 # DI.update_table_multiply()
