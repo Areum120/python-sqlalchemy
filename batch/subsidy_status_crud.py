@@ -5,26 +5,20 @@ import sqlalchemy
 from bs4 import BeautifulSoup as bs
 from html_table_parser import parser_functions#호출한 data 표형식으로 보기
 
-from db import db #SQLALchemy를 db변수로 인스턴스한 파일명
-from model import models #모델이 있는 파일 명
-import json
+# 경고창 무시
+import warnings
+warnings.filterwarnings('ignore')
 
+# parsing
 import pandas as pd
 import datetime
+import math
 
+# object 연결
 from model import models
-from sqlalchemy.orm import sessionmaker, scoped_session, session
 
-# DB선언
-from sqlalchemy import create_engine, Table, MetaData
-
-# db 연결
-SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://admin:worksdev77!@bmwgs-2.cj9bzkwqopkp.ap-northeast-2.rds.amazonaws.com:3306/evsadb'
-engine = sqlalchemy.create_engine(SQLALCHEMY_DATABASE_URI, echo=False)
-connect = engine.connect()
-meta = MetaData()
-Session = sessionmaker(bind=engine)
-session = Session()
+# db session 연결
+import db
 
 
 class data_insert():
@@ -101,7 +95,6 @@ class data_insert():
         split_3['출고대수_우선비대상'] = split_3['출고대수_우선비대상'].str.replace(pat=r'[^\w]', repl=r'', regex=True)
 
         # print(split_3)
-
         # 출고잔여대수 칼럼 parsing
         split_4 = df.출고잔여대수.str.split(' ')
 
@@ -167,65 +160,93 @@ class data_insert():
     def subsidy_info_insert(self):
         try:
             # subsidy_info table insert
-            self.result.to_sql(name='subsidy_info',con=engine,if_exists='append',index=True)#table이 있는 경우 if_exists='append' 사용, 값을 변경하려면 replace
+            self.result.to_sql(name='subsidy_info',con=db.engine,if_exists='append',index=True)#table이 있는 경우 if_exists='append' 사용, 값을 변경하려면 replace
             print('subsidy_info insert 완료')
         except Exception as e:
             print(e)
 
-        # db insert
-        # id
-        # sido
-        # region
-        # num_notice_all
-        # num_notice_priority
-        # num_notice_corp
-        # num_notice_taxi
-        # num_notice_normal
-        # num_recept_all
-        # num_recept_priority
-        # num_recept_corp
-        # num_recept_taxi
-        # num_recept_normal
-        # num_release_all
-        # num_release_priority
-        # num_release_corp
-        # num_release_taxi
-        # num_release_normal
-        # num_remains_all
-        # num_remains_priority
-        # num_remains_corp
-        # num_remains_taxi
-        # num_remains_normal
-        # created_at
-        # updated_at
-
     # subsidy_accepted insert 보조금 접수 가능
     def subsidy_accepted(self):
         # 잔여대수 전체, 잔여대수 우선순위, 잔여대수 법인, 잔여대수 택시, 잔여대수 일반
-        subsidy_accepted_df = self.result[['num_remains_all','num_remains_priority','num_remains_corp', 'num_remains_taxi', 'num_remains_normal']]
+        subsidy_accepted_df = self.result[['date', 'num_remains_all','num_remains_priority','num_remains_corp', 'num_remains_taxi', 'num_remains_normal']]
 
         # data type 변경
         type_change_df = self.result.astype({'num_recept_all':'int', 'num_notice_all':'int', 'num_notice_priority':'int','num_recept_priority':'int', 'num_notice_corp':'int','num_recept_corp':'int', 'num_notice_taxi':'int','num_recept_taxi':'int', 'num_notice_normal':'int','num_recept_normal':'int'})
 
         # type 확인
-        print(type_change_df.dtypes)
-        print(type_change_df['num_recept_all'])
+        # print(type_change_df.dtypes)
+        # print(type_change_df['num_recept_all'])
 
         # 접수율 = 전체 접수대수 / 전체 공고대수
         # 접수율 전체, 접수율 우선순위, 접수율 법인, 접수율 택시, 접수율 일반, 접수 가능여부
-        # subsidy_accepted_df['acceptance_rate_all'] = self.result['num_recept_all'] / self.result['num_notice_all']
-        # print(subsidy_accepted_df)
+
+        # 예외사항 - 0나누기 0은 nan으로 나오거나 3으로 0을 나눌 수 없어서 inf가 나옴. 만약 공고수가 0이고 접수대수가 0이상이면 접수율 100%로 변환하여 접수 불가능이라고 뜨게 하기
+        # lambda 함수 사용, axis=1 꼭 해주기
+
+        def get_acceptance_rate(x, y):
+            try:
+                if x==0 and y==0:
+                    return 100
+                elif x>0 and y==0:
+                    return 100
+                else:
+                    return x/y
+            except ZeroDivisionError:
+                print('0으로 나눌 수 없음')
+
+        subsidy_accepted_df['acceptance_rate_all'] = type_change_df.apply(lambda x: get_acceptance_rate(x['num_recept_all'], x['num_notice_all']), axis=1)
+        subsidy_accepted_df['acceptance_rate_priority'] = type_change_df.apply(lambda x: get_acceptance_rate(x['num_recept_priority'], x['num_notice_priority']), axis=1)
+        subsidy_accepted_df['acceptance_rate_corp'] = type_change_df.apply(lambda x: get_acceptance_rate(x['num_recept_corp'], x['num_notice_corp']), axis=1)
+        subsidy_accepted_df['acceptance_rate_taxi'] = type_change_df.apply(lambda x: get_acceptance_rate(x['num_recept_taxi'], x['num_notice_taxi']), axis=1)
+        subsidy_accepted_df['acceptance_rate_normal'] = type_change_df.apply(lambda x: get_acceptance_rate(x['num_recept_normal'], x['num_notice_normal']), axis=1)
+
+        # apply lambda if문 다중조건, inline 절로 표현 2
+        # type_change_df['acceptance_rate_all'] = type_change_df.apply(lambda x: '100' if (x['num_notice_all'] == 0 and x['num_recept_all'] ==0) else (x['num_recept_all'] / x['num_notice_all'])('100' if (x['num_notice_all'] == 0 and x['num_recept_all'] > 0) else (x['num_recept_all'] / x['num_notice_all'])), axis=1)
+        # print(type_change_df)
+
+        # 퍼센티지 바꾸기
+        def change_percent(v):
+            if v == 100:
+                return 100
+            else:
+                return round(v, 2)*100#2자리수부터 반올림, 100곱하기
+
+        subsidy_accepted_df['acceptance_rate_all'] = subsidy_accepted_df.apply(lambda v: change_percent(v['acceptance_rate_all']), axis=1)
+        subsidy_accepted_df['acceptance_rate_priority'] = subsidy_accepted_df.apply(lambda v: change_percent(v['acceptance_rate_priority']), axis=1)
+        subsidy_accepted_df['acceptance_rate_corp'] = subsidy_accepted_df.apply(lambda v: change_percent(v['acceptance_rate_corp']), axis=1)
+        subsidy_accepted_df['acceptance_rate_taxi'] = subsidy_accepted_df.apply(lambda v: change_percent(v['acceptance_rate_taxi']), axis=1)
+        subsidy_accepted_df['acceptance_rate_normal'] = subsidy_accepted_df.apply(lambda v: change_percent(v['acceptance_rate_normal']), axis=1)
+
+        # 접수 가능여부 칼럼 생성
+        def get_availability(z):
+            if z < 100:
+                return True
+            else:
+                return False
+
+        subsidy_accepted_df['availability_all'] = subsidy_accepted_df.apply(lambda z: get_availability(z['acceptance_rate_all']), axis=1)
+        subsidy_accepted_df['availability_priority'] = subsidy_accepted_df.apply(lambda z: get_availability(z['acceptance_rate_priority']), axis=1)
+        subsidy_accepted_df['availability_corp'] = subsidy_accepted_df.apply(lambda z: get_availability(z['acceptance_rate_corp']), axis=1)
+        subsidy_accepted_df['availability_taxi'] = subsidy_accepted_df.apply(lambda z: get_availability(z['acceptance_rate_taxi']), axis=1)
+        subsidy_accepted_df['availability_normal'] = subsidy_accepted_df.apply(lambda z: get_availability(z['acceptance_rate_normal']), axis=1)
+
+        # row 생성 일자
+        subsidy_accepted_df['created_at'] = datetime.datetime.now()
+        subsidy_accepted_df['updated_at'] = datetime.datetime.now()
+
+        print(subsidy_accepted_df)
+
+        # subsidy_accepted table insert
+        try:
+            subsidy_accepted_df.to_sql(name='subsidy_accepted',con=db.engine,if_exists='append',index=True)#table이 있는 경우 if_exists='append' 사용, 값을 변경하려면 replace
+            print('subsidy_info insert 완료')
+        except Exception as e:
+            print(e)
 
 
     # subsidy_trend insert 보조금 트렌드
-
-    #
-    #
     # subsidy_closing _area 보조금 마감지역
-    #
-    #
     # check_subsidy_area 지역 보조금 확인
-    #
 
     # update
     def update_table_multiply(self):
@@ -239,16 +260,34 @@ class data_insert():
         print(dict)
 
         for key, value in dict.items():
-            query = session.query(models.subsidy_info).filter(models.subsidy_info.id==key)
+            query = db.session.query(models.subsidy_info).filter(models.subsidy_info.id==key)
             query.update({models.subsidy_info.num_recept_all:value})
-            session.commit()
+            db.session.commit()
         print('update 완료')
+
+    # upgrade example
+    # def upgrade():
+    #     ### commands auto generated by Alembic - please adjust! ###
+    #     op.add_column('contract_type', sa.Column('allow_opportunities', sa.Boolean(), nullable=True))
+    #     op.add_column('contract_type', sa.Column('opportunity_response_instructions', sa.Text(), nullable=True))
+    #     op.create_foreign_key('created_by_id_fkey', 'job_status', 'users', ['created_by_id'], ['id'])
+    #     op.create_foreign_key('updated_by_id_fkey', 'job_status', 'users', ['updated_by_id'], ['id'])
+    #     op.add_column('opportunity', sa.Column('opportunity_type_id', sa.Integer(), nullable=True))
+    #     op.create_foreign_key(
+    #         'opportunity_type_id_contract_type_id_fkey', 'opportunity', 'contract_type',
+    #         ['opportunity_type_id'], ['id']
+    #     )
 
 
 # crawler 실행
 DI = data_insert('https://ev.or.kr/portal/localInfo', req)
 DI.crawler()
 DI.crawler_parsing()
+
+# insert
 # DI.subsidy_info_insert()
-DI.subsidy_accepted()
+# DI.subsidy_accepted()
+
+
+# update
 # DI.update_table_multiply()
