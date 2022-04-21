@@ -58,13 +58,15 @@ class subsidy_info(db.Model):
     updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
     def __repr__(self):
-        return f"subsidy_info('{self.id}',{self.date}', '{self.sido}', '{self.region}', '{self.num_notice_all}', '{self.num_notice_priority}', '{self.num_notice_corp}', '{self.num_notice_taxi}', '{self.num_notice_normal}', '{self.num_recept_all}', '{self.num_recept_priority}', '{self.num_recept_corp}', '{self.num_recept_taxi}', '{self.num_recept_normal}', '{self.num_release_all}', '{self.num_release_priority}', '{self.num_release_corp}', '{self.num_release_taxi}', '{self.num_release_normal}', '{self.num_remains_all}', '{self.num_remains_priority}', '{self.num_remains_corp}', '{self.num_remains_taxi}', '{self.num_remains_normal}', '{self.note}', '{self.created_at}', '{self.updated_at}')"
+        return f"subsidy_info('{self.id}',{self.date}','{self.sido}','{self.region}','{self.num_notice_all}', '{self.num_notice_priority}', '{self.num_notice_corp}', '{self.num_notice_taxi}', '{self.num_notice_normal}', '{self.num_recept_all}', '{self.num_recept_priority}', '{self.num_recept_corp}', '{self.num_recept_taxi}', '{self.num_recept_normal}', '{self.num_release_all}', '{self.num_release_priority}', '{self.num_release_corp}', '{self.num_release_taxi}', '{self.num_release_normal}', '{self.num_remains_all}', '{self.num_remains_priority}', '{self.num_remains_corp}', '{self.num_remains_taxi}', '{self.num_remains_normal}', '{self.note}', '{self.created_at}', '{self.updated_at}')"
 
 
 # subsidy_accepted라는 오브젝트
 class subsidy_accepted(db.Model):
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    id = db.Column(db.Integer, primary_key=True)
     date = db.Column(db.DATE, nullable=False)
+    sido = db.Column(db.String(20), nullable=False)
+    region = db.Column(db.String(20), nullable=False)
     num_remains_all = db.Column(db.Integer, primary_key=True)
     num_remains_priority = db.Column(db.Integer, nullable=False)
     num_remains_corp = db.Column(db.Integer, nullable=False)
@@ -75,23 +77,25 @@ class subsidy_accepted(db.Model):
     acceptance_rate_corp = db.Column(db.Float, nullable=False)
     acceptance_rate_taxi = db.Column(db.Float, nullable=False)
     acceptance_rate_normal =db.Column(db.Float, nullable=False)
-    availability_all = db.Column(db.BOOLEAN, nullable=False)
-    availability_priority = db.Column(db.BOOLEAN, unique=False, nullable=False)
-    availability_corp = db.Column(db.BOOLEAN, unique=False, nullable=False)
-    availability_taxi = db.Column(db.BOOLEAN, unique=False, nullable=False)
-    availability_normal = db.Column(db.BOOLEAN, unique=False, nullable=False)
+    availability_all = db.Column(db.Integer, nullable=False)
+    availability_priority = db.Column(db.Integer, unique=False, nullable=False)
+    availability_corp = db.Column(db.Integer, unique=False, nullable=False)
+    availability_taxi = db.Column(db.Integer, unique=False, nullable=False)
+    availability_normal = db.Column(db.Integer, unique=False, nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
     def __repr__(self):
-        return f"Polestar_info('{self.id}', {self.date}', '{self.num_remains_all}', '{self.num_remains_priority}', '{self.num_remains_corp}', '{self.num_remains_taxi}', '{self.num_remains_normal}', '{self.acceptance_rate_all}', '{self.acceptance_rate_priority}', '{self.acceptance_rate_corp}', '{self.acceptance_rate_taxi}', '{self.acceptance_rate_normal}', '{self.availability_all}', '{self.availability_priority}', '{self.availability_corp}', '{self.availability_taxi}', '{self.availability_normal}', '{self.created_at}', '{self.updated_at}')"
+        return f"Polestar_info('{self.id}', {self.date}','{self.sido}','{self.region}','{self.num_remains_all}', '{self.num_remains_priority}', '{self.num_remains_corp}', '{self.num_remains_taxi}', '{self.num_remains_normal}', '{self.acceptance_rate_all}', '{self.acceptance_rate_priority}', '{self.acceptance_rate_corp}', '{self.acceptance_rate_taxi}', '{self.acceptance_rate_normal}', '{self.availability_all}', '{self.availability_priority}', '{self.availability_corp}', '{self.availability_taxi}', '{self.availability_normal}', '{self.created_at}', '{self.updated_at}')"
 
 
 
 # subsidy_trend라는 오브젝트
 class subsidy_trend(db.Model):
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    id = db.Column(db.Integer, primary_key=True)
     date = db.Column(db.DATE, nullable=False, default=datetime.utcnow)
+    sido = db.Column(db.String(20), nullable=False)
+    region = db.Column(db.String(20), nullable=False)
     num_notice_all = db.Column(db.Integer, nullable=False)
     num_notice_priority = db.Column(db.Integer, nullable=False)
     num_notice_corp = db.Column(db.Integer, nullable=False)
@@ -116,23 +120,29 @@ class subsidy_trend(db.Model):
     updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
     def __repr__(self):
-        return f"Polestar_info('{self.id}', '{self.date}', '{self.num_notice_all}', '{self.num_notice_priority}', '{self.num_notice_corp}', '{self.num_notice_taxi}', '{self.num_notice_normal}','{self.num_recept_all}', '{self.num_recept_priority}', '{self.num_recept_corp}', '{self.num_recept_taxi}', '{self.num_recept_normal}', '{self.num_release_all}', '{self.num_release_priority}', '{self.num_release_corp}', '{self.num_release_taxi}', '{self.num_release_normal}', '{self.num_daily_recept_all}', '{self.num_daily_recept_priority}', '{self.num_daily_recept_corp}', '{self.num_daily_recept_taxi}', '{self.num_daily_recept_normal}', '{self.created_at}', '{self.updated_at}')"
+        return f"Polestar_info('{self.id}', '{self.date}', '{self.sido}','{self.region}', '{self.num_notice_all}', '{self.num_notice_priority}', '{self.num_notice_corp}', '{self.num_notice_taxi}', '{self.num_notice_normal}','{self.num_recept_all}', '{self.num_recept_priority}', '{self.num_recept_corp}', '{self.num_recept_taxi}', '{self.num_recept_normal}', '{self.num_release_all}', '{self.num_release_priority}', '{self.num_release_corp}', '{self.num_release_taxi}', '{self.num_release_normal}', '{self.num_daily_recept_all}', '{self.num_daily_recept_priority}', '{self.num_daily_recept_corp}', '{self.num_daily_recept_taxi}', '{self.num_daily_recept_normal}', '{self.created_at}', '{self.updated_at}')"
 
 
 # subsidy_closing_area라는 오브젝트
-
 class subsidy_closing_area(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     sido = db.Column(db.String(20), nullable=False)
     region = db.Column(db.String(20), nullable=False)
     acceptance_rate_all = db.Column(db.Float, nullable=False)
-    deadline = db.Column(db.BOOLEAN, unique=False, nullable=False)
-    due_to_close = db.Column(db.BOOLEAN, unique=False, nullable=False)
+    acceptance_rate_priority = db.Column(db.Float, nullable=False)
+    acceptance_rate_corp = db.Column(db.Float, nullable=False)
+    acceptance_rate_taxi = db.Column(db.Float, nullable=False)
+    acceptance_rate_normal = db.Column(db.Float, nullable=False)
+    is_all_deadline = db.Column(db.Integer, unique=False, nullable=False)
+    is_priority_deadline = db.Column(db.Integer, unique=False, nullable=False)
+    is_corp_deadline = db.Column(db.Integer, unique=False, nullable=False)
+    is_taxi_deadline = db.Column(db.Integer, unique=False, nullable=False)
+    is_normal_deadline = db.Column(db.Integer, unique=False, nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
     def __repr__(self):
-        return f"Polestar_info('{self.id}', '{self.sido}', '{self.region}', '{self.acceptance_rate_all}', '{self.deadline}', '{self.due_to_close}', '{self.created_at}', '{self.updated_at}')"
+        return f"Polestar_info('{self.id}', '{self.sido}', '{self.region}', '{self.acceptance_rate_all}', '{self.acceptance_rate_priority}', '{self.acceptance_rate_corp}', '{self.acceptance_rate_taxi}', '{self.acceptance_rate_normal}','{self.is_all_deadline}', '{self.is_priority_deadline}', '{self.is_corp_deadline}', '{self.is_taxi_deadline}', '{self.is_normal_deadline}','{self.created_at}', '{self.updated_at}')"
 
 
 # check_subsidy_area라는 오브젝트

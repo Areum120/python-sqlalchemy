@@ -1,22 +1,17 @@
 # -*- coding: utf-8 -*-
 # 한글 인코딩 에러
+# crawling
 import requests as req
-import sqlalchemy
 from bs4 import BeautifulSoup as bs
 from html_table_parser import parser_functions#호출한 data 표형식으로 보기
-
 # 경고창 무시
 import warnings
 warnings.filterwarnings('ignore')
-
 # parsing
 import pandas as pd
 import datetime
-import math
-
 # object 연결
 from model import models
-
 # db session 연결
 import db
 
@@ -61,7 +56,6 @@ class data_insert():
         split_1['민간공고대수_우선비대상'] = split_1['민간공고대수_우선비대상'].str.replace(pat=r'[^\w]', repl=r'', regex=True)
 
         # print(split_1)
-
         # 접수대수 칼럼 parsing
         split_2 = df.접수대수.str.split(' ')
 
@@ -78,7 +72,6 @@ class data_insert():
         split_2['접수대수_우선비대상'] = split_2['접수대수_우선비대상'].str.replace(pat=r'[^\w]', repl=r'', regex=True)
 
         # print(split_2)
-
         # 출고대수 칼럼 parsing
         split_3 = df.출고대수.str.split(' ')
 
@@ -168,17 +161,17 @@ class data_insert():
     def subsidy_info_insert(self):
         # subsidy_info table insert
 
-        # id값 생성
+        # 전일 넣은 id 이후부터 생성
         # db에 있는 전날 subsidy_info data 불러오기
         pre_df = pd.read_sql('select*from subsidy_info', db.connect)
-        print(len(pre_df['id']))
+        # print(len(pre_df['id']))
 
         pre_num = len(pre_df['id'])
         id = list(range(pre_num, pre_num+161, 1))
-        print(id)
-        print(len(id))
+        # print(id)
+        # print(len(id))
 
-        # 0번재 칼럼에 id 리스트 추가
+        # 0번째 칼럼에 id 리스트 추가
         self.result.insert(0, 'id', id, True)
         print(self.result)
 
@@ -191,7 +184,7 @@ class data_insert():
     # subsidy_accepted insert 보조금 접수 가능
     def subsidy_accepted(self):
         # 잔여대수 전체, 잔여대수 우선순위, 잔여대수 법인, 잔여대수 택시, 잔여대수 일반
-        subsidy_accepted_df = self.result[['date', 'num_notice_all', 'num_notice_priority',  'num_notice_corp',  'num_recept_all', 'num_notice_taxi', 'num_notice_normal', 'num_recept_all', 'num_recept_priority', 'num_recept_corp', 'num_recept_taxi', 'num_recept_normal', 'num_remains_all','num_remains_priority','num_remains_corp', 'num_remains_taxi', 'num_remains_normal']]
+        result_df = self.result[['date', 'sido', 'region', 'num_notice_all', 'num_notice_priority',  'num_notice_corp',  'num_notice_taxi', 'num_notice_normal', 'num_recept_all', 'num_recept_priority', 'num_recept_corp', 'num_recept_taxi', 'num_recept_normal', 'num_remains_all','num_remains_priority','num_remains_corp', 'num_remains_taxi', 'num_remains_normal']]
 
         # 접수율 = 전체 접수대수 / 전체 공고대수
         # 접수율 전체, 접수율 우선순위, 접수율 법인, 접수율 택시, 접수율 일반, 접수 가능여부
@@ -200,7 +193,7 @@ class data_insert():
         # lambda 함수 사용, axis=1 꼭 해주기
 
         def get_acceptance_rate(x, y):
-            try:
+            try:#x:접수대수 y:공고대수
                 if x==0 and y==0:
                     return 100
                 elif x>0 and y==0:
@@ -210,46 +203,112 @@ class data_insert():
             except ZeroDivisionError:
                 print('0으로 나눌 수 없음')
 
-        subsidy_accepted_df['acceptance_rate_all'] = subsidy_accepted_df.apply(lambda x: get_acceptance_rate(x['num_recept_all'], x['num_notice_all']), axis=1)
-        subsidy_accepted_df['acceptance_rate_priority'] = subsidy_accepted_df.apply(lambda x: get_acceptance_rate(x['num_recept_priority'], x['num_notice_priority']), axis=1)
-        subsidy_accepted_df['acceptance_rate_corp'] = subsidy_accepted_df.apply(lambda x: get_acceptance_rate(x['num_recept_corp'], x['num_notice_corp']), axis=1)
-        subsidy_accepted_df['acceptance_rate_taxi'] = subsidy_accepted_df.apply(lambda x: get_acceptance_rate(x['num_recept_taxi'], x['num_notice_taxi']), axis=1)
-        subsidy_accepted_df['acceptance_rate_normal'] = subsidy_accepted_df.apply(lambda x: get_acceptance_rate(x['num_recept_normal'], x['num_notice_normal']), axis=1)
+        result_df['acceptance_rate_all'] = result_df.apply(lambda x: get_acceptance_rate(x['num_recept_all'], x['num_notice_all']), axis=1)
+        result_df['acceptance_rate_priority'] = result_df.apply(lambda x: get_acceptance_rate(x['num_recept_priority'], x['num_notice_priority']), axis=1)
+        result_df['acceptance_rate_corp'] = result_df.apply(lambda x: get_acceptance_rate(x['num_recept_corp'], x['num_notice_corp']), axis=1)
+        result_df['acceptance_rate_taxi'] = result_df.apply(lambda x: get_acceptance_rate(x['num_recept_taxi'], x['num_notice_taxi']), axis=1)
+        result_df['acceptance_rate_normal'] = result_df.apply(lambda x: get_acceptance_rate(x['num_recept_normal'], x['num_notice_normal']), axis=1)
 
         # apply lambda if문 다중조건, inline 절로 표현 2
         # type_change_df['acceptance_rate_all'] = type_change_df.apply(lambda x: '100' if (x['num_notice_all'] == 0 and x['num_recept_all'] ==0) else (x['num_recept_all'] / x['num_notice_all'])('100' if (x['num_notice_all'] == 0 and x['num_recept_all'] > 0) else (x['num_recept_all'] / x['num_notice_all'])), axis=1)
         # print(type_change_df)
+
 
         # 퍼센티지 바꾸기
         def change_percent(v):
             if v == 100:
                 return 100
             else:
-                return round(v, 2)*100#2자리수부터 반올림, 100곱하기
+                return round(v, 2)*100#소수점 둘째자리까지 반올림, 100곱하기
 
-        subsidy_accepted_df['acceptance_rate_all'] = subsidy_accepted_df.apply(lambda v: change_percent(v['acceptance_rate_all']), axis=1)
-        subsidy_accepted_df['acceptance_rate_priority'] = subsidy_accepted_df.apply(lambda v: change_percent(v['acceptance_rate_priority']), axis=1)
-        subsidy_accepted_df['acceptance_rate_corp'] = subsidy_accepted_df.apply(lambda v: change_percent(v['acceptance_rate_corp']), axis=1)
-        subsidy_accepted_df['acceptance_rate_taxi'] = subsidy_accepted_df.apply(lambda v: change_percent(v['acceptance_rate_taxi']), axis=1)
-        subsidy_accepted_df['acceptance_rate_normal'] = subsidy_accepted_df.apply(lambda v: change_percent(v['acceptance_rate_normal']), axis=1)
+        result_df['acceptance_rate_all'] = result_df.apply(lambda v: change_percent(v['acceptance_rate_all']), axis=1)
+        result_df['acceptance_rate_priority'] = result_df.apply(lambda v: change_percent(v['acceptance_rate_priority']), axis=1)
+        result_df['acceptance_rate_corp'] = result_df.apply(lambda v: change_percent(v['acceptance_rate_corp']), axis=1)
+        result_df['acceptance_rate_taxi'] = result_df.apply(lambda v: change_percent(v['acceptance_rate_taxi']), axis=1)
+        result_df['acceptance_rate_normal'] = result_df.apply(lambda v: change_percent(v['acceptance_rate_normal']), axis=1)
 
-        # 접수 가능여부 칼럼 생성
-        def get_availability(z):
-            if z < 100:
-                return True
+        # print(result_df)
+
+        # 161개 지자체 평균 접수율 계산
+        acceptance_rate = result_df.mean()
+        print(round(acceptance_rate['acceptance_rate_all'],1))
+        print(round(acceptance_rate['acceptance_rate_priority'],1))
+        print(round(acceptance_rate['acceptance_rate_corp'],1))
+        print(round(acceptance_rate['acceptance_rate_taxi'],1))
+        print(round(acceptance_rate['acceptance_rate_normal'],1))
+
+        result_df['apt_all_mean'] = round(acceptance_rate['acceptance_rate_all'],1)
+        result_df['apt_priority_mean'] = round(acceptance_rate['acceptance_rate_priority'],1)
+        result_df['apt_corp_mean'] = round(acceptance_rate['acceptance_rate_corp'],1)
+        result_df['apt_taxi_mean'] = round(acceptance_rate['acceptance_rate_taxi'],1)
+        result_df['apt_normal_mean'] = round(acceptance_rate['acceptance_rate_normal'],1)
+
+        # 접수율 비교 함수
+        # 1: 매우 높은 편 2: 높은편 3: 보통 4: 낮은편 5: 매우 낮은편 6: 불가능(공고대수가 0인 경우)
+        def get_acceptance_compare(x, y, z):
+            # y=가 0인 경우, 공고대수가 0이고 접수대수가 0인 경우
+            if z==0 and y==0:
+                return 6
+                # 공고대수가 0이 아니고 접수대수가 0인 경우 포함 나머지 경우의 수
             else:
-                return False
+                # x>y
+                if x > y:
+                    if x - y == 0:
+                        return 3
+                    elif x - y >=0 and x - y < 10:# x-y<10#보통
+                        return 3
+                    elif x - y >= 10 and x - y < 25:# x-y<25#높은 편
+                        return 2
+                    elif x - y >= 25:# x-y>25#매우 높은 편
+                        return 1
+                # x<y
+                elif x < y:
+                    if y - x == 0:
+                        return 3
+                    elif y - x >= 0 and y - x <= 10: #보통
+                        return 3
+                    elif y - x >= 10 and y - x < 25:
+                        return 4 #낮은 편
+                    elif y - x >= 25:
+                        return 5 #매우 낮은 편
+                # x,y가 같은 경우
+                elif x==y:
+                    return 3
 
-        subsidy_accepted_df['availability_all'] = subsidy_accepted_df.apply(lambda z: get_availability(z['acceptance_rate_all']), axis=1)
-        subsidy_accepted_df['availability_priority'] = subsidy_accepted_df.apply(lambda z: get_availability(z['acceptance_rate_priority']), axis=1)
-        subsidy_accepted_df['availability_corp'] = subsidy_accepted_df.apply(lambda z: get_availability(z['acceptance_rate_corp']), axis=1)
-        subsidy_accepted_df['availability_taxi'] = subsidy_accepted_df.apply(lambda z: get_availability(z['acceptance_rate_taxi']), axis=1)
-        subsidy_accepted_df['availability_normal'] = subsidy_accepted_df.apply(lambda z: get_availability(z['acceptance_rate_normal']), axis=1)
+        # 각 지자체 접수율, 각 지자체 접수율 평균, 각 지자체 공고대수
+        result_df['availability_all'] = result_df.apply(lambda z: get_acceptance_compare(z['acceptance_rate_all'], z['apt_all_mean'], z['num_notice_all']), axis=1)
+        result_df['availability_priority'] = result_df.apply(lambda z: get_acceptance_compare(z['acceptance_rate_priority'], z['apt_priority_mean'], z['num_notice_priority']), axis=1)
+        result_df['availability_corp'] = result_df.apply(lambda z: get_acceptance_compare(z['acceptance_rate_corp'], z['apt_corp_mean'], z['num_notice_corp']), axis=1)
+        result_df['availability_taxi'] = result_df.apply(lambda z: get_acceptance_compare(z['acceptance_rate_taxi'], z['apt_taxi_mean'], z['num_notice_taxi']), axis=1)
+        result_df['availability_normal'] = result_df.apply(lambda z: get_acceptance_compare(z['acceptance_rate_normal'], z['apt_normal_mean'], z['num_notice_normal']), axis=1)
 
         # row 생성 일자
-        subsidy_accepted_df['created_at'] = datetime.datetime.now()
-        subsidy_accepted_df['updated_at'] = datetime.datetime.now()
+        result_df['created_at'] = datetime.datetime.now()
+        result_df['updated_at'] = datetime.datetime.now()
 
+        print(result_df)
+
+        # 첫번째로 id 추가할 때
+        # id = list(range(0, 161, 1))
+        # 0번째 칼럼에 id 리스트 추가
+        # result_df.insert(0, 'id', id, True)
+
+        # 전일 넣은 id 이후부터 생성
+        # db에 있는 전날 subsidy_accepted data 불러오기
+        pre_df = pd.read_sql('select*from subsidy_accepted', db.connect)
+        print(len(pre_df['id']))
+
+        pre_num = len(pre_df['id'])
+        id = list(range(pre_num, pre_num + 161, 1))
+
+        # table순서 정리
+        subsidy_accepted_df = result_df[['date', 'sido', 'region', 'num_remains_all', 'num_remains_priority', 'num_remains_corp', 'num_remains_taxi',
+             'num_remains_normal', 'acceptance_rate_all', 'acceptance_rate_priority', 'acceptance_rate_corp',
+             'acceptance_rate_taxi', 'acceptance_rate_normal', 'availability_all', 'availability_priority',
+             'availability_corp', 'availability_taxi', 'availability_normal', 'created_at', 'updated_at']]
+
+        # 0번째 칼럼에 id 리스트 추가
+        subsidy_accepted_df.insert(0, 'id', id, True)
         print(subsidy_accepted_df)
 
         # subsidy_accepted table insert
@@ -261,7 +320,12 @@ class data_insert():
 
     # subsidy_trend insert 보조금 트렌드
     def subsidy_trend(self):
-        subsidy_trend_df =  self.result[['date','num_notice_all', 'num_notice_priority', 'num_notice_corp',
+        # 4월 19~20 시도, 지역 칼럼 insert
+        # sido_df = self.result[['sido', 'region']]
+        # yesterday_df = pd.read_sql('select*from subsidy_info', db.connect)
+        # sido_df2 = yesterday_df[['sido', 'region']]
+
+        subsidy_trend_df =  self.result[['date', 'sido', 'region', 'num_notice_all', 'num_notice_priority', 'num_notice_corp',
                           'num_notice_taxi', 'num_notice_normal', 'num_recept_all', 'num_recept_priority', 'num_recept_corp',
                           'num_recept_taxi', 'num_recept_normal', 'num_release_all', 'num_release_priority',
                           'num_release_corp', 'num_release_taxi', 'num_release_normal']]
@@ -280,8 +344,8 @@ class data_insert():
 
         # 전일 df 추리기
         yesterday_df = yesterday_df[yesterday_df['date'] == yesterday]
+        yesterday_df = yesterday_df.reset_index(drop=True)#인덱스 재정렬(기존 인덱스 삭제)
 
-        # 일별 접수 대수 = 전일 접수대수 - 오늘 접수대수
         subsidy_trend_df['num_daily_recept_all'] = subsidy_trend_df['num_recept_all'] - yesterday_df['num_recept_all']
         subsidy_trend_df['num_daily_recept_priority'] = subsidy_trend_df['num_recept_priority'] - yesterday_df['num_recept_priority']
         subsidy_trend_df['num_daily_recept_corp'] =  subsidy_trend_df['num_recept_corp'] - yesterday_df['num_recept_corp']
@@ -294,6 +358,27 @@ class data_insert():
 
         print(subsidy_trend_df)
 
+        # 첫번째로 id 추가할 때
+        # id = list(range(0, 161, 1))
+        # print(id)
+        # print(len(id))
+
+        # 0번째 칼럼에 id 리스트 추가
+        # subsidy_trend_df.insert(0, 'id', id, True)
+        # print(subsidy_trend_df)
+
+        # 전일 넣은 id 이후부터 생성
+        # db에 있는 전날 subsidy_trend data 불러오기
+        pre_df = pd.read_sql('select*from subsidy_trend', db.connect)
+        # print(len(pre_df['id']))
+
+        pre_num = len(pre_df['id'])
+        id = list(range(pre_num, pre_num+161, 1))
+
+        # 0번째 칼럼에 id 리스트 추가
+        subsidy_trend_df.insert(0, 'id', id, True)
+        print(subsidy_trend_df)
+
         # subsidy_accepted table insert
         try:
             subsidy_trend_df.to_sql(name='subsidy_trend', con=db.engine, if_exists='append',
@@ -302,7 +387,10 @@ class data_insert():
         except Exception as e:
             print(e)
 
-    # subsidy_closing _area 보조금 마감지역
+    # subsidy_closing_area 보조금 마감지역
+    def subsidy_closing_area(self):
+        pass
+
 
 
 
@@ -335,7 +423,6 @@ class data_insert():
     #         'opportunity_type_id_contract_type_id_fkey', 'opportunity', 'contract_type',
     #         ['opportunity_type_id'], ['id'])
 
-
 # crawler 실행
 DI = data_insert('https://ev.or.kr/portal/localInfo', req)
 DI.crawler()
@@ -343,8 +430,9 @@ DI.crawler_parsing()
 
 # insert
 # DI.subsidy_info_insert()
-DI.subsidy_accepted()
+# DI.subsidy_accepted()
 # DI.subsidy_trend()
+DI.subsidy_closing_area()
 
 # update
 # DI.update_table_multiply()
