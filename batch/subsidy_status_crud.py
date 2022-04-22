@@ -309,6 +309,8 @@ class data_insert():
 
         # 0번째 칼럼에 id 리스트 추가
         subsidy_accepted_df.insert(0, 'id', id, True)
+
+        self.subsidy_accepted_df = subsidy_accepted_df
         print(subsidy_accepted_df)
 
         # subsidy_accepted table insert
@@ -379,7 +381,7 @@ class data_insert():
         subsidy_trend_df.insert(0, 'id', id, True)
         print(subsidy_trend_df)
 
-        # subsidy_accepted table insert
+        # subsidy_trend table insert
         try:
             subsidy_trend_df.to_sql(name='subsidy_trend', con=db.engine, if_exists='append',
                                        index=False)  # table이 있는 경우 if_exists='append' 사용, 값을 변경하려면 replace
@@ -389,8 +391,54 @@ class data_insert():
 
     # subsidy_closing_area 보조금 마감지역
     def subsidy_closing_area(self):
-        pass
+        # 보조금 접수 가능 table의 data 불러오기, DI.subsidy_accepted()를 동시 호출해야 하는 문제가 있음
+        subsidy_closing_area_df = self.subsidy_accepted_df[['date', 'sido', 'region', 'acceptance_rate_all','acceptance_rate_corp','acceptance_rate_priority','acceptance_rate_taxi','acceptance_rate_normal']]
 
+        # 접수율 마감 여부 data 생성
+        def is_deadline(x):
+            if x >= 100:
+                return 1
+            elif x >= 90:
+                return 2
+            elif x < 90:
+                return 3
+
+        subsidy_closing_area_df['is_all_deadline'] = subsidy_closing_area_df.apply(lambda x: is_deadline(x['acceptance_rate_all']), axis=1)
+        subsidy_closing_area_df['is_priority_deadline'] = subsidy_closing_area_df.apply(lambda x: is_deadline(x['acceptance_rate_priority']), axis=1)
+        subsidy_closing_area_df['is_corp_deadline'] = subsidy_closing_area_df.apply(lambda x: is_deadline(x['acceptance_rate_corp']), axis=1)
+        subsidy_closing_area_df['is_taxi_deadline'] = subsidy_closing_area_df.apply(lambda x: is_deadline(x['acceptance_rate_taxi']), axis=1)
+        subsidy_closing_area_df['is_normal_deadline'] = subsidy_closing_area_df.apply(lambda x: is_deadline(x['acceptance_rate_normal']), axis=1)
+
+        # row 생성 일자
+        subsidy_closing_area_df['created_at'] = datetime.datetime.now()
+        subsidy_closing_area_df['updated_at'] = datetime.datetime.now()
+
+        # 첫번째로 id 추가할 때
+        id = list(range(0, 161, 1))
+
+        # 0번째 칼럼에 id 리스트 추가
+        subsidy_closing_area_df.insert(0, 'id', id, True)
+        print(subsidy_closing_area_df)
+
+        # 전일 넣은 id 이후부터 생성
+        # db에 있는 전날 subsidy_trend data 불러오기
+        # pre_df = pd.read_sql('select*from subsidy_accepted', db.connect)
+        # print(len(pre_df['id']))
+
+        # pre_num = len(pre_df['id'])
+        # id = list(range(pre_num, pre_num + 161, 1))
+
+        # 0번째 칼럼에 id 리스트 추가
+        # subsidy_closing_area_df.insert(0, 'id', id, True)
+        print(subsidy_closing_area_df)
+
+        # subsidy_closing_area table insert
+        try:
+            subsidy_closing_area_df.to_sql(name='subsidy_closing_area', con=db.engine, if_exists='append',
+                                       index=False)  # table이 있는 경우 if_exists='append' 사용, 값을 변경하려면 replace, index는 생성하지 말기
+            print('subsidy_closing_area insert 완료')
+        except Exception as e:
+            print(e)
 
 
 
@@ -432,7 +480,7 @@ DI.crawler_parsing()
 # DI.subsidy_info_insert()
 # DI.subsidy_accepted()
 # DI.subsidy_trend()
-DI.subsidy_closing_area()
+# DI.subsidy_closing_area()
 
 # update
 # DI.update_table_multiply()
