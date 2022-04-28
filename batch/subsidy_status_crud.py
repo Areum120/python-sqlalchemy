@@ -296,8 +296,8 @@ class data_insert():
         # 전일 넣은 id 이후부터 생성
         # db에 있는 전날 subsidy_accepted data 불러오기
         pre_df = pd.read_sql('select*from subsidy_accepted', db.connect)
-        print(len(pre_df['id']))
-
+        # print(len(pre_df['id']))
+        #
         pre_num = len(pre_df['id'])
         id = list(range(pre_num, pre_num + 161, 1))
 
@@ -326,39 +326,36 @@ class data_insert():
         # sido_df = self.result[['sido', 'region']]
         # yesterday_df = pd.read_sql('select*from subsidy_info', db.connect)
         # sido_df2 = yesterday_df[['sido', 'region']]
-
-        subsidy_trend_df =  self.result[['date', 'sido', 'region', 'num_notice_all', 'num_notice_priority', 'num_notice_corp',
+       subsidy_trend_df =  self.result[['date', 'sido', 'region', 'num_notice_all', 'num_notice_priority', 'num_notice_corp',
                           'num_notice_taxi', 'num_notice_normal', 'num_recept_all', 'num_recept_priority', 'num_recept_corp',
                           'num_recept_taxi', 'num_recept_normal', 'num_release_all', 'num_release_priority',
                           'num_release_corp', 'num_release_taxi', 'num_release_normal']]
-
         # 일별 접수 대수 칼럼 생성
         # 어제 날짜 구하기
-        today = datetime.date.today()
-        yesterday = today - datetime.timedelta(1)
-        yesterday = str(yesterday)
+       today = datetime.date.today()
+       yesterday = today - datetime.timedelta(1)
+       yesterday = str(yesterday)
 
         # db에 있는 전날 subsidy_info data 불러오기
-        yesterday_df = pd.read_sql('select*from subsidy_info', db.connect)
-
-        # yesterday data type 변환
-        yesterday_df = yesterday_df.astype({'date':'str','num_recept_all':'int','num_recept_priority':'int','num_recept_corp':'int','num_recept_taxi':'int','num_recept_normal':'int'})
+       yesterday_df = pd.read_sql('select*from subsidy_info', db.connect)
+       # yesterday data type 변환
+       yesterday_df = yesterday_df.astype({'date':'str','num_recept_all':'int','num_recept_priority':'int','num_recept_corp':'int','num_recept_taxi':'int','num_recept_normal':'int'})
 
         # 전일 df 추리기
-        yesterday_df = yesterday_df[yesterday_df['date'] == yesterday]
-        yesterday_df = yesterday_df.reset_index(drop=True)#인덱스 재정렬(기존 인덱스 삭제)
+       yesterday_df = yesterday_df[yesterday_df['date'] == yesterday]
+       yesterday_df = yesterday_df.reset_index(drop=True)#인덱스 재정렬(기존 인덱스 삭제)
 
-        subsidy_trend_df['num_daily_recept_all'] = subsidy_trend_df['num_recept_all'] - yesterday_df['num_recept_all']
-        subsidy_trend_df['num_daily_recept_priority'] = subsidy_trend_df['num_recept_priority'] - yesterday_df['num_recept_priority']
-        subsidy_trend_df['num_daily_recept_corp'] =  subsidy_trend_df['num_recept_corp'] - yesterday_df['num_recept_corp']
-        subsidy_trend_df['num_daily_recept_taxi'] = subsidy_trend_df['num_recept_taxi'] - yesterday_df['num_recept_taxi']
-        subsidy_trend_df['num_daily_recept_normal'] = subsidy_trend_df['num_recept_normal'] - yesterday_df['num_recept_normal']
+       subsidy_trend_df['num_daily_recept_all'] = subsidy_trend_df['num_recept_all'] - yesterday_df['num_recept_all']
+       subsidy_trend_df['num_daily_recept_priority'] = subsidy_trend_df['num_recept_priority'] - yesterday_df['num_recept_priority']
+       subsidy_trend_df['num_daily_recept_corp'] =  subsidy_trend_df['num_recept_corp'] - yesterday_df['num_recept_corp']
+       subsidy_trend_df['num_daily_recept_taxi'] = subsidy_trend_df['num_recept_taxi'] - yesterday_df['num_recept_taxi']
+       subsidy_trend_df['num_daily_recept_normal'] = subsidy_trend_df['num_recept_normal'] - yesterday_df['num_recept_normal']
 
-        # row 생성 일자
-        subsidy_trend_df['created_at'] = datetime.datetime.now()
-        subsidy_trend_df['updated_at'] = datetime.datetime.now()
+    # row 생성 일자
+       subsidy_trend_df['created_at'] = datetime.datetime.now()
+       subsidy_trend_df['updated_at'] = datetime.datetime.now()
 
-        print(subsidy_trend_df)
+       print(subsidy_trend_df)
 
         # 첫번째로 id 추가할 때
         # id = list(range(0, 161, 1))
@@ -371,28 +368,31 @@ class data_insert():
 
         # 전일 넣은 id 이후부터 생성
         # db에 있는 전날 subsidy_trend data 불러오기
-        pre_df = pd.read_sql('select*from subsidy_trend', db.connect)
-        # print(len(pre_df['id']))
+       pre_df = pd.read_sql('select*from subsidy_trend', db.connect)
+       # print(len(pre_df['id']))
 
-        pre_num = len(pre_df['id'])
-        id = list(range(pre_num, pre_num+161, 1))
+       pre_num = len(pre_df['id'])
+       id = list(range(pre_num, pre_num+161, 1))
 
         # 0번째 칼럼에 id 리스트 추가
-        subsidy_trend_df.insert(0, 'id', id, True)
-        print(subsidy_trend_df)
+       subsidy_trend_df.insert(0, 'id', id, True)
+       print(subsidy_trend_df)
 
         # subsidy_trend table insert
-        try:
-            subsidy_trend_df.to_sql(name='subsidy_trend', con=db.engine, if_exists='append',
+       try:
+          subsidy_trend_df.to_sql(name='subsidy_trend', con=db.engine, if_exists='append',
                                        index=False)  # table이 있는 경우 if_exists='append' 사용, 값을 변경하려면 replace
-            print('subsidy_trend insert 완료')
-        except Exception as e:
-            print(e)
+          print('subsidy_trend insert 완료')
+       except Exception as e:
+          print(e)
 
     # subsidy_closing_area 보조금 마감지역
     def subsidy_closing_area(self):
         # 보조금 접수 가능 table의 data 불러오기, DI.subsidy_accepted()를 동시 호출해야 하는 문제가 있음
         subsidy_closing_area_df = self.subsidy_accepted_df[['date', 'sido', 'region', 'acceptance_rate_all','acceptance_rate_corp','acceptance_rate_priority','acceptance_rate_taxi','acceptance_rate_normal']]
+
+
+        # 보조금,  민간공고대수 법인기관, 접수대수 법인, 캐피탈사(나중에 추가) 칼럼 추가
 
         # 접수율 마감 여부 data 생성
         def is_deadline(x):
@@ -414,22 +414,25 @@ class data_insert():
         subsidy_closing_area_df['updated_at'] = datetime.datetime.now()
 
         # 첫번째로 id 추가할 때
-        id = list(range(0, 161, 1))
-
-        # 0번째 칼럼에 id 리스트 추가
-        subsidy_closing_area_df.insert(0, 'id', id, True)
-        print(subsidy_closing_area_df)
-
-        # 전일 넣은 id 이후부터 생성
-        # db에 있는 전날 subsidy_trend data 불러오기
-        # pre_df = pd.read_sql('select*from subsidy_accepted', db.connect)
-        # print(len(pre_df['id']))
-
-        # pre_num = len(pre_df['id'])
-        # id = list(range(pre_num, pre_num + 161, 1))
+        # id = list(range(0, 161, 1))
 
         # 0번째 칼럼에 id 리스트 추가
         # subsidy_closing_area_df.insert(0, 'id', id, True)
+        # print(subsidy_closing_area_df)
+
+        # 전일 넣은 id 이후부터 생성
+        # db에 있는 전날 subsidy_trend data 불러오기
+        pre_df = pd.read_sql('select*from subsidy_accepted', db.connect)
+        # print(len(pre_df['id']))
+
+        pre_num = len(pre_df['id'])
+        id = list(range(pre_num, pre_num + 161, 1))
+
+        # pre_num = len(pre_df['id'])
+        id = list(range(pre_num, pre_num + 161, 1))
+
+        # 0번째 칼럼에 id 리스트 추가
+        subsidy_closing_area_df.insert(0, 'id', id, True)
         print(subsidy_closing_area_df)
 
         # subsidy_closing_area table insert
@@ -442,34 +445,6 @@ class data_insert():
 
 
 
-    # update
-    def update_table_multiply(self):
-        # model.models오브젝트의 table에 쿼리 날리기
-        # print(self.update_num_recept_all.values)
-
-        # 대량 값 update 하기
-        list = self.update_num_recept_all.values
-        # 1~161 인덱스로 dict 자료형 만들기
-        dict = {(i+1): list[i] for i in range(0, len(list))}
-        print(dict)
-
-        for key, value in dict.items():
-            query = db.session.query(models.subsidy_info).filter(models.subsidy_info.id==key)
-            query.update({models.subsidy_info.num_recept_all:value})
-            db.session.commit()
-        print('update 완료')
-
-    # upgrade example
-    # def upgrade():
-    #     ### commands auto generated by Alembic - please adjust! ###
-    #     op.add_column('contract_type', sa.Column('allow_opportunities', sa.Boolean(), nullable=True))
-    #     op.add_column('contract_type', sa.Column('opportunity_response_instructions', sa.Text(), nullable=True))
-    #     op.create_foreign_key('created_by_id_fkey', 'job_status', 'users', ['created_by_id'], ['id'])
-    #     op.create_foreign_key('updated_by_id_fkey', 'job_status', 'users', ['updated_by_id'], ['id'])
-    #     op.add_column('opportunity', sa.Column('opportunity_type_id', sa.Integer(), nullable=True))
-    #     op.create_foreign_key(
-    #         'opportunity_type_id_contract_type_id_fkey', 'opportunity', 'contract_type',
-    #         ['opportunity_type_id'], ['id'])
 
 # crawler 실행
 DI = data_insert('https://ev.or.kr/portal/localInfo', req)
@@ -477,10 +452,10 @@ DI.crawler()
 DI.crawler_parsing()
 
 # insert
-# DI.subsidy_info_insert()
-# DI.subsidy_accepted()
-# DI.subsidy_trend()
-# DI.subsidy_closing_area()
+DI.subsidy_info_insert()
+DI.subsidy_accepted()
+DI.subsidy_trend()
+DI.subsidy_closing_area()
 
 # update
 # DI.update_table_multiply()

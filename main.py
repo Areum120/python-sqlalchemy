@@ -1,4 +1,4 @@
-from model.table_create import db
+from model.models import db
 from sqlalchemy import create_engine
 from sqlalchemy_utils import database_exists, create_database
 from config import SQLALCHEMY_DATABASE_URI
