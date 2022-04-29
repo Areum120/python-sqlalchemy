@@ -181,83 +181,88 @@ class subsidy_info_insert():
 
 
         # 모델별 지방비 조회
-        # def sido_model_insert(optionNo, sidoNo):
-        #     # 새창의 모델별 지방비 조회버튼값
-        #     option_btn = driver.find_element_by_xpath('/ html / body / form / table / tbody / tr['+ optionNo +'] / td[1] / a')
-        #     option_btn.click()#조회 버튼 클릭
-        #
-        #     # 모델별 지방비 table 갖고 오기
-        #     html2 = driver.page_source
-        #     soup2 = bs(html2, 'html.parser')
-        #     data2 = soup2.find('table', {'class': 'table_02_2_1'})
-        #     model_table = parser_functions.make2d(data2)
-        #     self.model_table = model_table
-        #
-        #     # 모든 열 출력
-        #     pd.set_option('display.max_columns', None)
-        #
-        #     # parsing
-        #     df_optionNo = pd.DataFrame(data=self.model_table[1:], columns=self.model_table[sidoNo])#0~160
-        #     # self.df_optionNo = df_optionNo
-        #     # print(df_optionNo)
-        #
-        #     check_subsidy_area_df = df_optionNo[['제조사', '모델명', '보조금(만원)' ]]
-        #     check_subsidy_area_df['sido'] = self.df_subsidy['시도'][sidoNo]#0~160
-        #     check_subsidy_area_df['region'] = self.df_subsidy['지역구분'][sidoNo]#0~160
-        #     check_subsidy_area_df['car_price'] = 5000
-        #
-        #     # type 변경
-        #     check_subsidy_area_df = check_subsidy_area_df.astype({'보조금(만원)': 'int'})
-        #     check_subsidy_area_df['sum_price'] = check_subsidy_area_df['car_price'] - check_subsidy_area_df['보조금(만원)']
-        #
-        #     # 데이터프레임 특수문자 제거
-        #     check_subsidy_area_df['subsidy'] = df_optionNo['보조금(만원)'].str.replace(pat=r'[^\w]', repl=r'',regex=True)
-        #
-        #     # 민간공고대수 전체, 잔여대수 전체, 접수율 전체
-        #     check_subsidy_area_df['num_notice_all'] = self.result['num_notice_all'][sidoNo]#0~160
-        #     check_subsidy_area_df['num_remains_all'] = self.result['num_remains_all'][sidoNo]#0~160
-        #     check_subsidy_area_df['acceptance_rate_all'] = self.result['acceptance_rate_all'][sidoNo]#0~160
-        #
-        #     # row 생성 일자
-        #     check_subsidy_area_df['created_at'] = datetime.datetime.now()
-        #     check_subsidy_area_df['updated_at'] = datetime.datetime.now()
-        #
-        #     # id 추가
-        #     pre_df = pd.read_sql('select*from ev_subsidy_calculator', db.connect)
-        #     # print(len(pre_df['id']))
-        #
-        #     pre_num = len(pre_df['id'])
-        #     id = list(range(pre_num, pre_num + 61, 1))
-        #     # 9822(61x161)
-        #
-        #     # 0번째 칼럼에 id 리스트 추가
-        #     check_subsidy_area_df.insert(0, 'id', id, True)
-        #
-        #
-        #     # 순서 변경
-        #     check_subsidy_area_df = check_subsidy_area_df[['id','sido','region','제조사','모델명', 'subsidy', 'num_notice_all', 'num_remains_all', 'acceptance_rate_all', 'car_price', 'sum_price', 'created_at', 'updated_at']]
-        #     # 이름 변경
-        #     check_subsidy_area_df.columns = ['id','sido','region','importer','model', 'subsidy', 'num_notice_all', 'num_remains_all', 'acceptance_rate_all', 'car_price', 'sum_price', 'created_at', 'updated_at']
-        #     print(check_subsidy_area_df)
-        #
-        #     # data insert
-        #     try:
-        #         check_subsidy_area_df.to_sql(name='ev_subsidy_calculator', con=db.engine, if_exists='append',
-        #                                        index=False)  # table이 있는 경우 if_exists='append' 사용, 값을 변경하려면 replace, index는 생성하지 말기
-        #         print('ev_subsidy_calculator insert 완료')
-        #     except Exception as e:
-        #         print(e)
-        #
-        #     # 뒤로가기 버튼 클릭
-        #     back_btn = driver.find_element_by_xpath('/ html / body / form / div / a')
-        #     back_btn.click()
+        def sido_model_insert(optionNo, sidoNo):
+            # 새창의 모델별 지방비 조회버튼값
+            option_btn = driver.find_element_by_xpath('/ html / body / form / table / tbody / tr['+ optionNo +'] / td[1] / a')
+            option_btn.click()#조회 버튼 클릭
+
+            # 모델별 지방비 table 갖고 오기
+            html2 = driver.page_source
+            soup2 = bs(html2, 'html.parser')
+            data2 = soup2.find('table', {'class': 'table_02_2_1'})
+            model_table = parser_functions.make2d(data2)
+            self.model_table = model_table
+
+            # 모든 열 출력
+            pd.set_option('display.max_columns', None)
+
+            # parsing
+            df_optionNo = pd.DataFrame(data=self.model_table[1:], columns=self.model_table[0])
+            # self.df_optionNo = df_optionNo
+            # print(df_optionNo)
+
+            check_subsidy_area_df = df_optionNo[['제조사', '모델명', '보조금(만원)' ]]
+            check_subsidy_area_df['sido'] = self.df_subsidy['시도'][sidoNo]#0~160
+            check_subsidy_area_df['region'] = self.df_subsidy['지역구분'][sidoNo]#0~160
+            check_subsidy_area_df['car_price'] = 5000
+
+            # 데이터프레임 특수문자 제거
+            check_subsidy_area_df['subsidy'] = df_optionNo['보조금(만원)'].str.replace(pat=r'[^\w]', repl=r'',regex=True)
+
+            # type 변경
+            check_subsidy_area_df = check_subsidy_area_df.astype({'subsidy': 'int'})
+            check_subsidy_area_df['sum_price'] = check_subsidy_area_df['car_price'] - check_subsidy_area_df['subsidy']
+
+            # 민간공고대수 전체, 잔여대수 전체, 접수율 전체
+            check_subsidy_area_df['num_notice_all'] = self.result['num_notice_all'][sidoNo]#0~160
+            check_subsidy_area_df['num_remains_all'] = self.result['num_remains_all'][sidoNo]#0~160
+            check_subsidy_area_df['acceptance_rate_all'] = self.result['acceptance_rate_all'][sidoNo]#0~160
+
+            # row 생성 일자
+            check_subsidy_area_df['created_at'] = datetime.datetime.now()
+            check_subsidy_area_df['updated_at'] = datetime.datetime.now()
+
+            # 첫번째로 id 추가할 때
+            # id = list(range(0, 61, 1))
+
+            # 0번째 칼럼에 id 리스트 추가
+            # check_subsidy_area_df.insert(0, 'id', id, True)
+
+            # id 추가
+            pre_df = pd.read_sql('select*from ev_subsidy_calculator', db.connect)
+            # print(len(pre_df['id']))
+
+            pre_num = len(pre_df['id'])
+            id = list(range(pre_num, pre_num + 61, 1))
+            # 9822(61x161)
+
+            # 0번째 칼럼에 id 리스트 추가
+            check_subsidy_area_df.insert(0, 'id', id, True)
+
+
+            # 순서 변경
+            check_subsidy_area_df = check_subsidy_area_df[['id','sido','region','제조사','모델명', 'subsidy', 'num_notice_all', 'num_remains_all', 'acceptance_rate_all', 'car_price', 'sum_price', 'created_at', 'updated_at']]
+            # 이름 변경
+            check_subsidy_area_df.columns = ['id','sido','region','importer','model', 'subsidy', 'num_notice_all', 'num_remains_all', 'acceptance_rate_all', 'car_price', 'sum_price', 'created_at', 'updated_at']
+            print(check_subsidy_area_df)
+
+            # data insert
+            try:
+                check_subsidy_area_df.to_sql(name='ev_subsidy_calculator', con=db.engine, if_exists='append',
+                                               index=False)  # table이 있는 경우 if_exists='append' 사용, 값을 변경하려면 replace, index는 생성하지 말기
+                print('ev_subsidy_calculator insert 완료')
+            except Exception as e:
+                print(e)
+
+            # 뒤로가기 버튼 클릭
+            back_btn = driver.find_element_by_xpath('/ html / body / form / div / a')
+            back_btn.click()
 
         # 반복문으로 전체 조회 버튼 조회
-        option_list = list(range(1,4))#optionNo은 1~161번까지 (1, 162), #sido_num은 0에서 160까지 (0, 160)
-        for i in option_list:
-            print(i[1:162])
-            print(i[0:161])
-            # sido_model_insert(str(i))
+        option_list = list(range(2,162))#optionNo은 1~161번까지 (1, 162), #sido_num은 0에서 160까지 (0, 160)
+        for i, j in enumerate(option_list, start=1):#i 인덱스 ,start=1 옵션을 줄 수 있음
+            sido_model_insert(str(j), i)#j만 str 변환(xpath값때문에)
+            # print(i, j)
 
 
     # 문제 마지막 self.df_optionNo만 나옴, sido_car_option함수 내에서 parsing 후 db에 데이터 넣고, back 버튼을 누르고 다시 불러온 데이터를 넣고 반복해야 할 듯
@@ -274,3 +279,5 @@ SI.crawler_subsidy()
 # SI.subsidy_calculator_insert()
 
 
+# 오류 : 어떤 지자체는 전체 모델을 지원 안해주나 봄...
+# ValueError: Length of values (61) does not match length of index (50)
