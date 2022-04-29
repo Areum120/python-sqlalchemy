@@ -6,7 +6,9 @@ from bs4 import BeautifulSoup as bs
 from html_table_parser import parser_functions#호출한 data 표형식으로 보기
 # 경고창 무시
 import warnings
+from selenium import webdriver
 warnings.filterwarnings('ignore')
+import time
 # parsing
 import pandas as pd
 import datetime
@@ -173,7 +175,7 @@ class data_insert():
 
         # 0번째 칼럼에 id 리스트 추가
         self.result.insert(0, 'id', id, True)
-        print(self.result)
+        # print(self.result)
 
         try:
             self.result.to_sql(name='subsidy_info',con=db.engine,if_exists='append',index=False)#table이 있는 경우 if_exists='append' 사용, 값을 변경하려면 replace
@@ -273,7 +275,7 @@ class data_insert():
                         return 5 #매우 낮은 편
                 # x,y가 같은 경우
                 elif x==y:
-                    return 3
+                    return 3#보통
 
         # 각 지자체 접수율, 각 지자체 접수율 평균, 각 지자체 공고대수
         result_df['availability_all'] = result_df.apply(lambda z: get_acceptance_compare(z['acceptance_rate_all'], z['apt_all_mean'], z['num_notice_all']), axis=1)
@@ -389,10 +391,14 @@ class data_insert():
     # subsidy_closing_area 보조금 마감지역
     def subsidy_closing_area(self):
         # 보조금 접수 가능 table의 data 불러오기, DI.subsidy_accepted()를 동시 호출해야 하는 문제가 있음
+
         subsidy_closing_area_df = self.subsidy_accepted_df[['date', 'sido', 'region', 'acceptance_rate_all','acceptance_rate_corp','acceptance_rate_priority','acceptance_rate_taxi','acceptance_rate_normal']]
+        subsidy_closing_area_df['num_notice_corp'] = self.result['num_notice_corp']#민간공고대수 법인기관
+        subsidy_closing_area_df['num_notice_corp'] = self.result['num_recept_corp']# 접수대수 법인
+        subsidy_closing_area_df['capital_nm'] = 'KB캐피탈'# 캐피탈사(지점은 region과 일치 시킬 것, 나중에 추가)
+        subsidy_closing_area_df['subsidy_sum'] = [900,1050,1100,1060,1100,1200,1050,900,1050,1100,1000,1000,1050,1100,1200,1100,1000,1050,1100,1100,1000,1200,1000,1050,1050,1100,1050,1050,1200,1200,1100,1050,1100,1100,1100,1000,1100,1200,1200,1140,1140,1140,1140,1140,1140,1140,1140,1140,1140,1140,1140,1140,1140,1140,1140,1140,1140,1400,1400,1400,1400,1400,1400,1400,1400,1400,1400,1400,1400,1400,1400,1400,1500,1400,1400,1500,1400,1400,1400,1400,1400,1400,1400,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1450,1320,1350,1550,1550,1450,1550,1450,1550,1550,1450,1550,1550,1550,1550,1450,1550,1450,1550,1450,1650,1450,1300,1300,1300,1300,1300,1300,1300,1300,1300,1300,1300,1300,1300,1300,1300,1300,1300,1300,1300,1300,1300,1300,1800,1300,1300,1300,1300,1300,1300,1300,1400,1300,1300,1345,1450,1400,1300,1400,1400,1400,1500,1100]#보조금 합계
 
-
-        # 보조금,  민간공고대수 법인기관, 접수대수 법인, 캐피탈사(나중에 추가) 칼럼 추가
+        # 보조금(지역기준 총합)
 
         # 접수율 마감 여부 data 생성
         def is_deadline(x):
@@ -421,19 +427,16 @@ class data_insert():
         # print(subsidy_closing_area_df)
 
         # 전일 넣은 id 이후부터 생성
-        # db에 있는 전날 subsidy_trend data 불러오기
-        pre_df = pd.read_sql('select*from subsidy_accepted', db.connect)
+        # db에 있는 전날 closing_area data 불러오기
+        pre_df = pd.read_sql('select*from subsidy_closing_area', db.connect)
         # print(len(pre_df['id']))
 
         pre_num = len(pre_df['id'])
         id = list(range(pre_num, pre_num + 161, 1))
 
-        # pre_num = len(pre_df['id'])
-        id = list(range(pre_num, pre_num + 161, 1))
-
         # 0번째 칼럼에 id 리스트 추가
         subsidy_closing_area_df.insert(0, 'id', id, True)
-        print(subsidy_closing_area_df)
+        # print(subsidy_closing_area_df)
 
         # subsidy_closing_area table insert
         try:
@@ -456,6 +459,3 @@ DI.subsidy_info_insert()
 DI.subsidy_accepted()
 DI.subsidy_trend()
 DI.subsidy_closing_area()
-
-# update
-# DI.update_table_multiply()
